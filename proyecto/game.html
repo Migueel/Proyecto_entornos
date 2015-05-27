@@ -1,0 +1,276 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Phaser Example Runner</title>
+        <meta name="viewport" content="initial-scale=1 maximum-scale=1 user-scalable=0 minimal-ui" />
+        <script src="_site/js/jquery-2.0.3.min.js" type="text/javascript"></script>
+        <script src="_site/phaser/phaser.2.2.2.min.js" type="text/javascript"></script>
+        <script src="_site/phaser/blob.js" type="text/javascript"></script>
+        <script src="_site/phaser/canvas-to-blob.js" type="text/javascript"></script>
+        <script src="_site/phaser/filesaver.js" type="text/javascript"></script>
+        <script src="_site/phaser/embed.js" type="text/javascript"></script>
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                font-family: Arial;
+                font-size: 14px;
+                background-color: #ffffff;
+                color: #fff;
+            }
+
+        </style>
+    </head>
+    <body>
+
+        <div id="phaser-example"></div>
+
+        <script type="text/javascript">
+
+       var game = new Phaser.Game(1200, 600, Phaser.CANVAS, 'phaser-example', { preload: preload, create: create, update: update, render: render });
+
+
+function preload() {
+
+    game.load.spritesheet('dude', 'assets/games/starstruck/dude.png', 32, 48);
+    game.load.image('background', 'assets/skies/deep-space.jpg');
+    game.load.spritesheet('droid', 'assets/games/asteroids/asteroid1.png', 70, 70);
+    game.load.spritesheet('star', 'assets/games/starstruck/star.png', 32, 48);
+    game.load.image('bullet', 'assets/games/asteroids/bullets.png');
+    game.load.image('bullet2', 'assets/games/tanks/bullet.png');
+    game.load.image('ufo', 'assets/sprites/ufo.png');
+    game.load.image('barra', 'assets/games/orbit/paddle1.png');
+    game.load.image('turret','assets/games/tanks/turret.png');
+}
+
+var sprite;
+var facing = 'left';
+var jumpTimer = 0;
+var cursors;
+var jumpButton;
+var bg;
+var stateText;
+var bullets;
+var bullets2;
+var bulletTime = 0;
+var bulletTime2 = 0;
+
+
+function create() {
+
+    game.world.setBounds(10, 10, 3500, 600);
+
+    game.physics.startSystem(Phaser.Physics.ARCADE);
+
+    bg = game.add.tileSprite(10, 10, 3500, 600, 'background');
+
+    game.physics.arcade.gravity.y = 0;
+
+    player = game.add.sprite(32, 352, 'dude');
+    game.physics.enable(player, Phaser.Physics.ARCADE);
+
+    game.camera.follow(player);
+
+    player.body.collideWorldBounds = true;
+    player.body.gravity.y = 1000;
+    player.body.maxVelocity.y = 500;
+    player.body.setSize(20, 32, 5, 16);
+
+    player.animations.add('left', [0, 1, 2, 3], 10, true);
+    player.animations.add('turn', [4], 20, true);
+    player.animations.add('right', [5, 6, 7, 8], 10, true);
+
+    ufo = game.add.sprite(3300, 540, 'ufo');
+    game.physics.enable(ufo, Phaser.Physics.ARCADE);
+    ufo.body.collideWorldBounds = true;
+
+    plataforma = game.add.sprite(32, 400, 'barra');
+    game.physics.enable(plataforma, Phaser.Physics.ARCADE);
+    plataforma.body.immovable = true;
+
+    barra = game.add.sprite(2100, 540, 'barra');
+    game.physics.enable(barra, Phaser.Physics.ARCADE);
+    barra.body.immovable = true;
+
+    turret = game.add.sprite(2400, 610, 'turret');
+    game.physics.enable(turret, Phaser.Physics.ARCADE);
+    turret.body.immovable = true;
+    turret.angle = 180;
+
+    droid = game.add.sprite(500, 594, 'droid');
+    droid2 = game.add.sprite(1000, 594, 'droid');
+    droid3 = game.add.sprite(1200, 594, 'droid');
+    droid4 = game.add.sprite(1700, 594, 'droid');
+    droid5 = game.add.sprite(2600, 594, 'droid');
+    droid6 = game.add.sprite(3200, 594, 'droid');
+
+    droid.angle = 320;
+    droid2.angle = 320;
+    droid3.angle = 320;
+    droid4.angle = 320;
+    droid5.angle = 320;
+    droid6.angle = 320;
+
+    game.physics.enable(droid, Phaser.Physics.ARCADE);
+    game.physics.enable(droid2, Phaser.Physics.ARCADE);
+    game.physics.enable(droid3, Phaser.Physics.ARCADE);
+    game.physics.enable(droid4, Phaser.Physics.ARCADE);
+    game.physics.enable(droid5, Phaser.Physics.ARCADE);
+    game.physics.enable(droid6, Phaser.Physics.ARCADE);
+
+    droid.body.immovable = true;
+    droid2.body.immovable = true;
+    droid3.body.immovable = true;
+    droid4.body.immovable = true;
+    droid5.body.immovable = true;
+    droid6.body.immovable = true;
+
+    bullets = game.add.group();
+    bullets.enableBody = true;
+    bullets.physicsBodyType = Phaser.Physics.ARCADE;
+    bullets.createMultiple(30, 'bullet');
+    bullets.setAll('anchor.x', 0.5);
+    bullets.setAll('anchor.y', 1);
+    bullets.setAll('outOfBoundsKill', true);
+    bullets.setAll('checkWorldBounds', true);
+
+    bullets2 = game.add.group();
+    bullets2.enableBody = true;
+    bullets2.physicsBodyType = Phaser.Physics.ARCADE;
+    bullets2.createMultiple(30, 'bullet2');
+    bullets2.setAll('anchor.x', 0.5);
+    bullets2.setAll('anchor.y', 1);
+    bullets2.setAll('outOfBoundsKill', true);
+    bullets2.setAll('checkWorldBounds', true);
+
+    cursors = game.input.keyboard.createCursorKeys();
+
+   jumpButton = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+
+    var text = "Derrota al ovni";
+    var style = { font: "30px Arial", fill: "#ff0044", align: "center" };
+
+    var t = game.add.text(game.world.centerX-1700, 200, text, style);
+
+}
+
+function update() {
+
+    game.physics.arcade.collide(player, droid, playerHitsBox, null, this);
+    game.physics.arcade.collide(player, droid2, playerHitsBox, null, this);
+    game.physics.arcade.collide(player, droid3, playerHitsBox, null, this);
+    game.physics.arcade.collide(player, droid4, playerHitsBox, null, this);
+    game.physics.arcade.collide(player, droid5, playerHitsBox, null, this);
+    game.physics.arcade.collide(player, droid6, playerHitsBox, null, this);
+
+    game.physics.arcade.collide(player, bullets, playerHitsBox, null, this);
+    game.physics.arcade.collide(player, bullets2, playerHitsBox, null, this);
+    game.physics.arcade.collide(player, barra);
+    game.physics.arcade.collide(player, plataforma);
+    game.physics.arcade.collide(player, ufo);
+    game.physics.arcade.collide(player, turret);
+
+    bullet = bullets.getFirstExists(false);
+   
+    bullet2 = bullets2.getFirstExists(false);
+    bullet2.angle = 180;
+
+        if (bullet &&  game.time.now > bulletTime)
+        {
+            bullet.reset(3300, 560);
+            bullet.body.velocity.x = -600;
+            bulletTime = game.time.now + 1500;
+        }
+
+        if (bullet2 && game.time.now > bulletTime2) {
+
+            bullet2.reset(2350, 590);
+            bullet2.body.velocity.x = -300;
+            bulletTime2 = game.time.now + 2000;
+        }
+
+    if (player.alive) {
+       
+        player.body.velocity.x = 0;
+
+        if (cursors.left.isDown)
+        {
+            player.body.velocity.x = -300;
+
+            if (facing != 'left')
+            {
+                player.animations.play('left');
+                facing = 'left';
+            }
+        }
+        else if (cursors.right.isDown)
+        {
+            player.body.velocity.x = 300;
+
+            if (facing != 'right')
+            {
+                player.animations.play('right');
+                facing = 'right';
+            }
+        }
+        else
+        {
+            if (facing != 'idle')
+            {
+                player.animations.stop();
+
+                if (facing == 'left')
+                {
+                    player.frame = 0;
+                }
+                else
+                {
+                    player.frame = 5;
+                }
+
+                facing = 'idle';
+            }
+        }
+        if (jumpButton.isDown && player.body.onFloor() && game.time.now > jumpTimer)
+        {
+            player.body.velocity.y = -600;
+            jumpTimer = game.time.now + 750;
+        }
+
+        if(ufo.body.velocity.y != 0){
+            var text = "Has derrotado al ovni!";
+            var style = { font: "30px Arial", fill: "#ff0044", align: "center" };
+            var te = game.add.text(game.world.centerX+1200, 200, text, style);
+        }
+        
+    }
+}
+function togglePause() {
+
+    game.physics.arcade.isPaused = (game.physics.arcade.isPaused) ? false : true;
+
+}
+
+
+function playerHitsBox (player, droid) { //NO FUNCIONA
+
+    player.kill();
+
+    stateText.text=" GAME OVER \n Click to restart";
+    stateText.visible = true;
+
+
+    game.input.onTap.addOnce(restart,this);
+}
+
+function render () {
+
+    // game.debug.text(game.time.physicsElapsed, 32, 32);
+    // game.debug.body(player);
+    //game.debug.bodyInfo(player, 16, 24);
+
+}  
+        </script>
+    </body>
+</html>
